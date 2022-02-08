@@ -1,0 +1,5 @@
+Functionality
+1. Create an account.
+2. Add photo and caption.
+3. Add comments.
+4. User authentication.
