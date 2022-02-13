@@ -1,85 +1,88 @@
-import { Button } from '@material-ui/core';
-import React,{useState} from 'react';
-import {storage, db } from './Firebase';
-import firebase from 'firebase';
-import './ImageUpload.css';
-import axios from './axios';
+import { Button } from "@material-ui/core";
+import React, { useState } from "react";
+import { storage, db } from "./Firebase";
+import firebase from "firebase";
+import "./ImageUpload.css";
 
-function ImageUpload({username}) {
-    const [caption,setCaption] = useState('');
-    const [image,setImage] = useState(null);
-    const [progress,setProgress] = useState(0);
-    const [url,setUrl] = useState("");
-    
-    const handleChange = (e) => {       //this select the file to be uploaded and stored in image
-        if(e.target.files[0]){
-            setImage(e.target.files[0]);
-        }
+import FileBase64 from "react-file-base64";
+import { useDispatch } from "react-redux";
+import { createPost } from "./actions/posts";
+
+function ImageUpload({ user }) {
+  const [caption, setCaption] = useState("");
+  const [image, setImage] = useState("");
+  const [progress, setProgress] = useState(0);
+  const [url, setUrl] = useState("");
+  const dispatch = useDispatch();
+  const [postData, setPostData] = useState({
+    caption: "",
+    user: "",
+    image: "",
+  });
+  console.log(user?.displayName);
+  const handleChange = (e) => {
+    //this select the file to be uploaded and stored in image
+    if (e.target.files[0]) {
+      setImage(e.target.files[0]);
     }
-    
-    //this upload the image on firebase databse
-    const handleUpload = () => {
-    const uploadTask = storage.ref(`images/${image.name}`).put(image);    //here we get into storage and ref and then uploading the image on firebase DB
+  };
 
-    uploadTask.on(
-        "state_changed",
-        (snapshot) => {
-            //progress function ...
-            //belowed line is just copied
-            const progress = Math.round(
-                (snapshot.bytesTransferred / snapshot.totalBytes)*100
-            );
-            setProgress(progress);
-        },
-        (error) => {
-            //Error function...
-            console.log(error);
-            alert(error.message);
-        },
-        () => {
-            storage
-             .ref("images")
-             .child(image.name)
-             .getDownloadURL()
-             .then((url) => {      //Getting the link of image uploaded on firebase DB
+  //this upload the image on firebase databse
+  const handleUpload = async (e) => {
+    //e.preventDefault();
+    console.log(postData);
+    dispatch(createPost({ ...postData, user: user?.displayName }));
 
-                setUrl(url);
+    //timestamp: firebase.firestore.FieldValue.serverTimestamp(),
 
-                axios.post('/upload',{         
-                  caption: caption,
-                  user: username,
-                  image: url
-                });
-                 //this gets the link of image uploaded on firebase 
-                 db.collection("posts").add({                       //adding the image with caption on firebase Collections DB
-                     timestamp:firebase.firestore.FieldValue.serverTimestamp(),
-                     caption: caption,
-                     imageURL: url,
-                     username: username,
-                 })
-                 setProgress(0);
-                 setCaption("");
-                 setImage(null);
-             });
-             //above code gets the link of image uploaded on firebase
+    //setProgress(0);
+    setPostData({
+      caption: "",
+      user: "",
+      image: "",
+    });
+  };
 
-            
+  return (
+    <div className="imageupload">
+      {/* <progress className="imageupload__progress" value={progress} max="100" /> */}
+
+      <input
+        type="text"
+        placeholder="Enter a Caption..."
+        onChange={(event) =>
+          setPostData({ ...postData, caption: event.target.value })
         }
-    );
-    };
-
-    return (
-        <div className="imageupload">
-            <progress className="imageupload__progress" value={progress} max="100" />
-            <input type="text" placeholder="Enter a Caption..." onChange={event => setCaption(event.target.value)} value={caption}/>
-            <div>   
-            <input type="file" onChange={handleChange}/>
-            <Button className="imageUpload__button" onClick={handleUpload}>
-                Upload
-            </Button>
-            </div>
+        value={postData.caption}
+      />
+      {/* <input
+        type="text"
+        placeholder="Enter a UserName"
+        onChange={(event) =>
+          setPostData({ ...postData, user: event.target.value })
+        }
+        value={postData.user}
+      /> */}
+      <div>
+        {/* <input type="file" onChange={handleChange} /> */}
+        <div>
+          <FileBase64
+            type="file"
+            multiple={false}
+            onDone={({ base64 }) => setPostData({ ...postData, image: base64 })}
+          />
         </div>
-    )
+        <Button
+          className="imageUpload__button"
+          color="primary"
+          variant="contained"
+          onClick={handleUpload}
+        >
+          Upload
+        </Button>
+      </div>
+    </div>
+  );
 }
 
-export default ImageUpload
+export default ImageUpload;

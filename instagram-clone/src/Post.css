@@ -52,6 +52,7 @@
 
 .post__comments {
   padding: 10px;
+  border-top: 1px solid lightgray;
 }
 
 .post__caption {
